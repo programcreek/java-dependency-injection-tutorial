@@ -1,0 +1,143 @@
+
+Dependency injection (DI) is a technique in which a class receives its dependency from outside. If class A uses class B, class A is dependent on class B, and B is a dependency of A.
+
+The following example shows what a DI is in Java. In the first example, class A has a dependency on class B because B is a member of A. A and B are tightly coupled. Whenever B changes, A has to change. This situation is called hard dependency.
+
+<pre lang="java">
+// hard dependency
+class A{
+    private B b;
+
+    public A(){
+        this.b = new B();
+    }
+
+    ...
+}
+</pre>
+
+In the second example, A is still dependent on B, but the dependency is not hard-coded. It's decoupled by using a parameter in the constructor. If A needs a different implementation of B, A can use a different implementation of B to construct an instance. This leads to another key feature of DI: the class being injected should be an abstract interface so that different implementations can be injected to A. If there is ever only one implementation of B, there is no need to do DI.
+
+<pre lang="java">
+// dependency injection through constructor
+class A{
+    private B b;
+
+    public A(B b){
+        this.b = b;
+    }
+
+    ...
+}
+</pre>
+
+
+One example use of DI is the data access object (DAO). A class that performs CRUD operations usually requires database access. Using DI to inject a DAO to the application decouples the application layer with the data persistence layer. If the underlying database changes, the application class can change to a different DAO as long as these DAOs implement the same interface. The other benefit is making unit testing easier. Unit testing can use a fake (hard-coded or in-memory) DAO to test the application logic without worrying about the underlying database access.
+
+DI is a crucial technique used in popular Java frameworks such as Spring and Hibernate. Instead of manually creating a B object and pass it to A's constructor, frameworks use reflection to create the dependent objects and inject them to the proper locations based on the configurations.
+
+The following is a simple example to illustrate how DI looks like when using a framework and the two benefits of using DI. I use Guice framework because I want to try something new, but other frameworks work the same way behind-the-scenes. The source code is on GitHub.
+
+Say we have a computer and it has many parts working together, such as a CPU, memory, etc. There are two methods in a CPU.
+
+<pre lang="java">
+public interface CPU {
+    public void start();
+    public int getUsage();
+}
+</pre>
+
+The CPU can be either an Intel,
+<pre lang="java">
+public class Intel implements CPU{
+    @Override
+    public void start() {
+        System.out.println("Intel is started.");
+    }
+
+    @Override
+    public int getUsage() {
+        return new Random().nextInt(100);
+    }
+}
+</pre>
+
+or an AMD.
+<pre lang="java">
+public class Amd implements CPU {
+    @Override
+    public void start() {
+        System.out.print("Amd is started");
+    }
+
+    @Override
+    public int getUsage() {
+        return new Random().nextInt(100);
+    }
+}
+</pre>
+
+In Guice, injecting a depencency through constructor is as simple as adding a @Inject annotation.
+
+<pre lang="java">
+public class Computer {
+    private CPU cpu;
+
+    @Inject
+    Computer(CPU cpu) {
+        this.cpu = cpu;
+    }
+
+    public void start() {
+        cpu.start();
+        // start other parts
+    }
+
+    public boolean isStatusOk() {
+        //assuming this random
+        if (cpu.getUsage() > 50) {
+            return false;
+        }
+
+        // check other things, such as memory, hard drives.
+
+        return true;
+    }
+
+    public static void main(String[] args) {
+        Injector injector = Guice.createInjector(new BasicModule());
+        Computer computer = injector.getInstance(Computer.class);
+        computer.start();
+        System.out.println("Status:" + (computer.isStatusOk() ? "OK" : "Not OK"));
+    }
+}
+</pre>
+
+Guice uses a Module to configure the injections. In this example, the module binds a concrete Intel to CPU, when a CPU is requested.
+
+<pre lang="java">
+public class BasicModule extends AbstractModule {
+    @Override
+    protected void configure() {
+        bind(CPU.class).to(Intel.class);
+    }
+}
+</pre>
+
+The benefit of this is obvious. The computer has the flexibility to use other types of CPUs when needed. Besides, if a CPU is dependent on another class, say, Cache or Clock, we can use the same way to inject the dependency without coupling the classes.
+
+Regarding the second benefit - making unit testing more straightforward, we can make a simple unit test that tests the isStatusOk() method. In a real situation, the CPU usage could be a random number based on real usage. If we want to focus the test on the other part of the method, we can mock the CPU's usage and assuming CPU usage is OK and test other parts.
+
+<pre lang="java">
+public class ComputerTest {
+    @Test
+    public void testIsStatusOk(){
+        CPU cpu = mock(CPU.class);
+        // mock cpu usage, so we can focus on testing other part
+        when(cpu.getUsage()).thenReturn(10);
+        assertTrue(new Computer(cpu).isStatusOk());
+    }
+}
+</pre>
+
+In summary, DI is for separation of concerns of object creation and use. DI decouples class dependency and make unit testing easier.
