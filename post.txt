@@ -36,7 +36,7 @@ One example use of DI is the data access object (DAO). A class that performs CRU
 
 DI is a crucial technique used in popular Java frameworks such as Spring and Hibernate. Instead of manually creating a B object and pass it to A's constructor, frameworks use reflection to create the dependent objects and inject them to the proper locations based on the configurations.
 
-The following is a simple example to illustrate how DI looks like when using a framework and the two benefits of using DI. I use Guice framework because I want to try something new, but other frameworks work the same way behind-the-scenes. The source code is on GitHub.
+The following is a simple example to illustrate how DI looks like when using a framework and the two benefits of using DI. I use Guice framework because I want to try something new, but other frameworks work the same way behind-the-scenes. The source code is on <a href="https://github.com/programcreek/java-dependency-injection-tutorial">GitHub</a>.
 
 Say we have a computer and it has many parts working together, such as a CPU, memory, etc. There are two methods in a CPU.
 
